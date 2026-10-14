@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react"
 import exifr from "exifr"
 import { publishLocation } from "../api/github"
 import { mapsEmbed, mapsLink } from "../config"
-import { blobToBase64, compressPhoto } from "../lib/image"
+import { blobToBase64, compressPhoto, preparePhoto } from "../lib/image"
 import { formatCoords } from "../lib/sort"
 import { CROWDS, MODES, type Crowd, type Location, type Mode, type RepoRef } from "../types"
 
@@ -42,22 +42,27 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
   }
 
   async function onFile(next: File | null) {
-    setFile(next)
+    setFile(null)
     setGps(null)
     setGpsMessage("")
     setError("")
-    replacePreview(next ? URL.createObjectURL(next) : "")
+    replacePreview("")
     if (!next) return
     setReading(true)
     try {
-      const point = (await exifr.gps(next)) as Gps | undefined
+      const [point, opened] = await Promise.all([
+        exifr.gps(next).catch(() => undefined) as Promise<Gps | undefined>,
+        preparePhoto(next),
+      ])
+      replacePreview(URL.createObjectURL(opened))
+      setFile(opened)
       if (!point || !Number.isFinite(point.latitude) || !Number.isFinite(point.longitude)) {
         setGpsMessage("В этом фото нет координат. На айфоне для снимка должна быть включена геолокация.")
         return
       }
       setGps(point)
-    } catch {
-      setGpsMessage("Не удалось прочитать данные снимка. Выберите фото ещё раз.")
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось открыть фото")
     } finally {
       setReading(false)
     }
@@ -128,13 +133,13 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
           <input
             key={fileKey}
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             onChange={(event) => void onFile(event.target.files?.[0] ?? null)}
           />
           {preview ? <img src={preview} alt="Выбранное фото" /> : <span>Выбрать фото с айфона</span>}
         </label>
 
-        {reading ? <p className="muted">Читаем координаты…</p> : null}
+        {reading ? <p className="muted">Открываем фото…</p> : null}
         {gpsMessage ? <p className="notice error">{gpsMessage}</p> : null}
         {gps ? (
           <div className="point">

@@ -1,6 +1,35 @@
 const MAX_EDGE = 1600
 const START_QUALITY = 0.82
 const SIZE_LIMIT = 1_400_000
+const HEIC_BRANDS = new Set(["mif1", "msf1", "heic", "heix", "hevc", "hevx"])
+
+function looksLikeHeic(file: File) {
+  const name = file.name.toLowerCase()
+  const type = file.type.toLowerCase()
+  return name.endsWith(".heic") || name.endsWith(".heif") || type === "image/heic" || type === "image/heif"
+}
+
+async function fileIsHeic(file: File) {
+  if (looksLikeHeic(file)) return true
+  if (file.size < 12) return false
+  const brand = new TextDecoder()
+    .decode(await file.slice(8, 12).arrayBuffer())
+    .replace("\0", " ")
+    .trim()
+  return HEIC_BRANDS.has(brand)
+}
+
+export async function preparePhoto(file: File) {
+  if (!(await fileIsHeic(file))) return file
+  try {
+    const { heicTo } = await import("heic-to")
+    const jpeg = await heicTo({ blob: file, type: "image/jpeg", quality: 0.92 })
+    const base = file.name.replace(/\.(heic|heif)$/i, "") || "photo"
+    return new File([jpeg], `${base}.jpg`, { type: "image/jpeg" })
+  } catch {
+    throw new Error("Не удалось открыть HEIC. Выберите фото ещё раз.")
+  }
+}
 
 async function renderJpeg(file: Blob, quality: number) {
   const bitmap = await createImageBitmap(file)
@@ -34,7 +63,7 @@ export async function compressPhoto(file: Blob) {
     }
     return blob
   } catch {
-    throw new Error("Это фото браузер не открыл. Выберите JPEG с айфона.")
+    throw new Error("Не удалось подготовить фото. Выберите снимок ещё раз.")
   }
 }
 
