@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import exifr from "exifr"
 import { publishLocation } from "../api/github"
-import { mapsEmbed, mapsLink } from "../config"
-import { parseCoordinatePair, parseCoordinates, type Gps } from "../lib/coords"
+import { mapsLink } from "../config"
+import type { Gps } from "../lib/coords"
 import { blobToBase64, compressPhoto, preparePhoto } from "../lib/image"
 import { formatCoords } from "../lib/sort"
 import { CROWDS, MODES, type Crowd, type Location, type Mode, type RepoRef } from "../types"
+import { PointMap } from "./PointMap"
 
 type Props = {
   token: string
@@ -20,10 +21,7 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
   const [preview, setPreview] = useState("")
   const previewRef = useRef("")
   const [photoGps, setPhotoGps] = useState<Gps | null>(null)
-  const [manualGps, setManualGps] = useState<Gps | null>(null)
-  const [paste, setPaste] = useState("")
-  const [latText, setLatText] = useState("")
-  const [lngText, setLngText] = useState("")
+  const [picked, setPicked] = useState<Gps | null>(null)
   const [reading, setReading] = useState(false)
   const [name, setName] = useState("")
   const [mode, setMode] = useState<Mode>("День")
@@ -37,29 +35,7 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
     }
   }, [])
 
-  const gps = photoGps ?? manualGps
-
-  function clearManualPoint() {
-    setManualGps(null)
-    setPaste("")
-    setLatText("")
-    setLngText("")
-  }
-
-  function updateManualFields(latitude: string, longitude: string) {
-    setLatText(latitude)
-    setLngText(longitude)
-    setManualGps(parseCoordinatePair(latitude, longitude))
-  }
-
-  function applyPaste(value: string) {
-    setPaste(value)
-    const point = parseCoordinates(value)
-    if (!point) return
-    setLatText(String(point.latitude))
-    setLngText(String(point.longitude))
-    setManualGps(point)
-  }
+  const gps = picked ?? photoGps
 
   function replacePreview(next: string) {
     if (previewRef.current) URL.revokeObjectURL(previewRef.current)
@@ -70,7 +46,7 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
   async function onFile(next: File | null) {
     setFile(null)
     setPhotoGps(null)
-    clearManualPoint()
+    setPicked(null)
     setError("")
     replacePreview("")
     if (!next) return
@@ -124,7 +100,7 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
       await publishLocation({ repo, token, location, imageBase64 })
       setFile(null)
       setPhotoGps(null)
-      clearManualPoint()
+      setPicked(null)
       setName("")
       setFileKey((current) => current + 1)
       replacePreview("")
@@ -170,49 +146,24 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
         </label>
 
         {reading ? <p className="muted">Открываем фото…</p> : null}
-        {file && !reading && !photoGps ? (
+        {file && !reading ? (
           <div className="manual">
-            <p>В этом фото нет координат. Впишите точку или вставьте ссылку Google Карт.</p>
-            <label>
-              Ссылка или координаты
-              <input
-                value={paste}
-                placeholder="38.52497, -0.17359"
-                onChange={(event) => applyPaste(event.target.value)}
-              />
-            </label>
-            <div className="coord-row">
-              <label>
-                Широта
-                <input
-                  inputMode="decimal"
-                  value={latText}
-                  placeholder="38.52497"
-                  onChange={(event) => updateManualFields(event.target.value, lngText)}
-                />
-              </label>
-              <label>
-                Долгота
-                <input
-                  inputMode="decimal"
-                  value={lngText}
-                  placeholder="-0.17359"
-                  onChange={(event) => updateManualFields(latText, event.target.value)}
-                />
-              </label>
-            </div>
-            {(paste.trim() || (latText.trim() && lngText.trim())) && !manualGps ? (
-              <p className="notice error">Не получилось прочитать координаты. Пример: 38.52497, -0.17359</p>
+            <p>
+              {picked
+                ? "Точка стоит на карте. Нажмите ещё раз, чтобы сдвинуть."
+                : photoGps
+                  ? "Точка взята из фото. Нажмите на карту, если её нужно сдвинуть."
+                  : "Нажмите на карту в месте съёмки."}
+            </p>
+            <PointMap point={gps} onPick={setPicked} />
+            {gps ? (
+              <p>
+                Точка: {formatCoords(gps.latitude, gps.longitude)}.{" "}
+                <a href={mapsLink(gps.latitude, gps.longitude)} target="_blank" rel="noreferrer">
+                  Открыть в Google Картах
+                </a>
+              </p>
             ) : null}
-          </div>
-        ) : null}
-        {gps ? (
-          <div className="point">
-            <p>Точка: {formatCoords(gps.latitude, gps.longitude)}</p>
-            <iframe title="Точка на карте" src={mapsEmbed(gps.latitude, gps.longitude)} />
-            <a href={mapsLink(gps.latitude, gps.longitude)} target="_blank" rel="noreferrer">
-              Открыть в Google Картах
-            </a>
           </div>
         ) : null}
 

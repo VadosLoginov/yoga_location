@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import { deleteLocation, updateLocation } from "../api/github"
 import { photoUrl } from "../config"
-import { parseCoordinatePair } from "../lib/coords"
+import type { Gps } from "../lib/coords"
+import { PointMap } from "./PointMap"
 import { blobToBase64, compressPhoto, preparePhoto } from "../lib/image"
 import { formatCoords } from "../lib/sort"
 import { CROWDS, MODES, locationPhotos, type Crowd, type Location, type Mode, type RepoRef } from "../types"
@@ -26,8 +27,7 @@ export function EditLocation({ location, token, repo, onCancel, onNeedAccess, on
   const [name, setName] = useState(location.name)
   const [mode, setMode] = useState<Mode>(location.mode)
   const [crowd, setCrowd] = useState<Crowd>(location.crowd)
-  const [latText, setLatText] = useState(String(location.lat))
-  const [lngText, setLngText] = useState(String(location.lng))
+  const [point, setPoint] = useState<Gps>({ latitude: location.lat, longitude: location.lng })
   const [photos, setPhotos] = useState<DraftPhoto[]>(() =>
     locationPhotos(location).map((path) => ({ path, preview: photoUrl(repo, path) })),
   )
@@ -44,8 +44,6 @@ export function EditLocation({ location, token, repo, onCancel, onNeedAccess, on
       for (const url of owned.current) URL.revokeObjectURL(url)
     }
   }, [])
-
-  const point = parseCoordinatePair(latText, lngText)
 
   async function addFiles(list: FileList | null) {
     if (!list?.length) return
@@ -111,7 +109,7 @@ export function EditLocation({ location, token, repo, onCancel, onNeedAccess, on
       return
     }
     if (!point) {
-      setError("Впишите широту и долготу. Пример: 38.52497 и -0.17359")
+      setError("Нажмите точку на карте.")
       return
     }
     if (photos.length === 0) {
@@ -202,17 +200,11 @@ export function EditLocation({ location, token, repo, onCancel, onNeedAccess, on
           <input value={name} maxLength={80} onChange={(event) => setName(event.target.value)} />
         </label>
 
-        <div className="coord-row">
-          <label>
-            Широта
-            <input inputMode="decimal" value={latText} onChange={(event) => setLatText(event.target.value)} />
-          </label>
-          <label>
-            Долгота
-            <input inputMode="decimal" value={lngText} onChange={(event) => setLngText(event.target.value)} />
-          </label>
+        <div className="manual">
+          <p>Нажмите на карту, чтобы перенести точку.</p>
+          <PointMap point={point} onPick={setPoint} />
+          <p className="muted">Точка: {formatCoords(point.latitude, point.longitude)}</p>
         </div>
-        {point ? <p className="muted">Точка: {formatCoords(point.latitude, point.longitude)}</p> : null}
 
         <fieldset>
           <legend>Режим съёмки</legend>

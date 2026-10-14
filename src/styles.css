@@ -350,6 +350,34 @@ select, input[type="password"], input[type="text"], .form input:not([type="file"
 
 .manual p { margin: 0; }
 
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.point-map {
+  height: 320px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.point-map .leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #ddd4c8;
+  font: inherit;
+}
+
+.point-pin {
+  background: var(--green);
+  border: 3px solid var(--paper);
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 2px 8px rgba(34, 28, 22, 0.35);
+  transform: rotate(-45deg);
+}
+
 .coord-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
