@@ -1,4 +1,4 @@
-import { isCrowd, isMode, type Location, type RepoRef } from "../types"
+import { isCrowd, isMode, locationPhotos, type Location, type RepoRef } from "../types"
 
 const API = "https://api.github.com"
 
@@ -99,7 +99,12 @@ function parseLocations(text: string): Location[] {
     ) {
       return []
     }
-    return [row as Location]
+    const rawPhotos = Array.isArray((item as { photos?: unknown }).photos)
+      ? (item as { photos: unknown[] }).photos
+      : []
+    const photos = rawPhotos.filter((entry): entry is string => typeof entry === "string" && entry.length > 0)
+    const gallery = locationPhotos({ photo: row.photo, photos })
+    return [{ ...(row as Location), photo: gallery.includes(row.photo) ? row.photo : gallery[0], photos: gallery }]
   })
 }
 
@@ -190,33 +195,23 @@ export async function fetchLocations(repo: RepoRef, token: string) {
   return parseLocations(file.text)
 }
 
-export async function publishLocation(options: {
-  repo: RepoRef
-  token: string
-  location: Location
-  imageBase64: string
-}) {
-  const { repo, token, location, imageBase64 } = options
-  await putContent({
-    repo,
-    token,
-    path: location.photo,
-    contentBase64: imageBase64,
-    message: `Добавлено фото: ${location.name}`,
-  })
-
+async function writeLocations(
+  repo: RepoRef,
+  token: string,
+  message: string,
+  change: (list: Location[]) => Location[],
+) {
   let conflict: GitHubError | null = null
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const file = await readContent(repo, token, "data/locations.json")
-    const list = file ? parseLocations(file.text) : []
-    if (!list.some((item) => item.id === location.id)) list.push(location)
+    const list = change(file ? parseLocations(file.text) : [])
     try {
       await putContent({
         repo,
         token,
         path: "data/locations.json",
         contentBase64: encodeUtf8Base64(`${JSON.stringify(list, null, 2)}\n`),
-        message: `Добавлена локация: ${location.name}`,
+        message,
         sha: file?.sha,
       })
       return
@@ -229,4 +224,58 @@ export async function publishLocation(options: {
     }
   }
   throw conflict ?? new Error("База обновилась одновременно с другой отправкой. Попробуйте ещё раз.")
+}
+
+async function uploadImages(
+  repo: RepoRef,
+  token: string,
+  name: string,
+  images: { path: string; imageBase64: string }[],
+) {
+  for (const image of images) {
+    await putContent({
+      repo,
+      token,
+      path: image.path,
+      contentBase64: image.imageBase64,
+      message: `Добавлено фото: ${name}`,
+    })
+  }
+}
+
+export async function publishLocation(options: {
+  repo: RepoRef
+  token: string
+  location: Location
+  imageBase64: string
+}) {
+  const { repo, token, location, imageBase64 } = options
+  const stored = {
+    ...location,
+    photos: location.photos.length > 0 ? location.photos : [location.photo],
+  }
+  await uploadImages(repo, token, stored.name, [{ path: stored.photo, imageBase64 }])
+  await writeLocations(repo, token, `Добавлена локация: ${stored.name}`, (list) => {
+    if (list.some((item) => item.id === stored.id)) return list
+    return [...list, stored]
+  })
+}
+
+export async function updateLocation(options: {
+  repo: RepoRef
+  token: string
+  location: Location
+  images: { path: string; imageBase64: string }[]
+}) {
+  const { repo, token, location, images } = options
+  const photos = locationPhotos(location)
+  const stored = { ...location, photo: photos[0], photos }
+  await uploadImages(repo, token, stored.name, images)
+  await writeLocations(repo, token, `Обновлена локация: ${stored.name}`, (list) => {
+    const index = list.findIndex((item) => item.id === stored.id)
+    if (index < 0) return [...list, stored]
+    const next = [...list]
+    next[index] = stored
+    return next
+  })
 }

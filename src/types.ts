@@ -14,7 +14,15 @@ export type Location = {
   mode: Mode
   crowd: Crowd
   photo: string
+  photos: string[]
   added: string
+}
+
+export function locationPhotos(location: { photo: string; photos?: string[] }) {
+  const listed = (location.photos ?? []).filter((item) => item.length > 0)
+  const photos = listed.length > 0 ? [...new Set(listed)] : [location.photo]
+  if (!photos.includes(location.photo)) photos.unshift(location.photo)
+  return photos
 }
 
 export type RepoRef = {

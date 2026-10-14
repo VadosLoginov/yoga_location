@@ -40,7 +40,10 @@ h1, h2, h3 {
 
 h1 { font-size: 2rem; line-height: 1.1; }
 h2 { font-size: 1.45rem; }
-h3 { font-size: 1.25rem; }
+h3 {
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
 
 a { color: var(--green); }
 
@@ -349,4 +352,69 @@ select, input[type="password"], input[type="text"], .form input:not([type="file"
 
 @media (max-width: 520px) {
   .coord-row { grid-template-columns: 1fr; }
+}
+
+.card-photo { position: relative; }
+
+.photo-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 250, 244, 0.92);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.photo-nav.prev { left: 8px; }
+.photo-nav.next { right: 8px; }
+
+.photo-count {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 1;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(34, 28, 22, 0.72);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.thumb img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #ddd4c8;
+}
+
+.thumb.cover img { outline: 3px solid var(--green); }
+
+.add-photos { position: relative; text-align: center; }
+
+.add-photos input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }

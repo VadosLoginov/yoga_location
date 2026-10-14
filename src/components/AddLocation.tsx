@@ -118,6 +118,7 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
         mode,
         crowd,
         photo: `photos/${id}.jpg`,
+        photos: [`photos/${id}.jpg`],
         added: new Date().toISOString(),
       }
       await publishLocation({ repo, token, location, imageBase64 })
