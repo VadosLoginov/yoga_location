@@ -1,0 +1,325 @@
+:root {
+  color-scheme: light;
+  --bg: #efe7dc;
+  --paper: #fffaf4;
+  --ink: #221c16;
+  --muted: #6f655b;
+  --line: #e3d6c8;
+  --green: #1e4d3c;
+  --green-deep: #16382c;
+  --dawn: #9a6414;
+  --dawn-bg: #f8ead0;
+  --day: #1e4d3c;
+  --day-bg: #e4f0ea;
+  --sunset: #a33b16;
+  --sunset-bg: #f8e3d8;
+  --danger: #8d2d1f;
+  --shadow: 0 16px 40px rgba(60, 40, 20, 0.08);
+  font-family: Manrope, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.7), transparent 36%),
+    var(--bg);
+}
+
+button, input, select { font: inherit; color: inherit; }
+
+h1, h2, h3 {
+  font-family: Literata, serif;
+  font-weight: 560;
+  margin: 0;
+}
+
+h1 { font-size: 2rem; line-height: 1.1; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.25rem; }
+
+a { color: var(--green); }
+
+.app {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 20px 16px calc(92px + env(safe-area-inset-bottom));
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--sunset);
+}
+
+.tabs { display: none; }
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel-head, .card-body, .card-link, .card-map, .form, .notice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-head {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.muted, .meta, .help {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.help { font-size: 0.92rem; }
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(255, 250, 244, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.chips, .choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip, .choice, .tab, .button, .text-button {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.chip.active, .choice.active, .tab.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+
+.choice { position: relative; }
+
+.choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sort {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+select, input[type="password"], input[type="text"], .form input:not([type="file"]):not([type="radio"]) {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 500;
+}
+
+.button {
+  border-radius: 14px;
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+  padding: 14px 16px;
+  font-weight: 700;
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.text-button {
+  background: transparent;
+  padding: 8px 0;
+  border: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.text-button.danger { color: var(--danger); }
+
+.grid {
+  display: grid;
+  gap: 14px;
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.card-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card img, .file img, .point iframe, .card-map iframe {
+  width: 100%;
+  display: block;
+  border: 0;
+}
+
+.card img, .file img {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #ddd4c8;
+}
+
+.card-body, .card-link, .card-map { padding: 14px 14px 16px; }
+
+.card-link { padding-top: 0; }
+
+.tags { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.tag {
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #f1ebe3;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.tag.mode-dawn { color: var(--dawn); background: var(--dawn-bg); }
+.tag.mode-day { color: var(--day); background: var(--day-bg); }
+.tag.mode-sunset { color: var(--sunset); background: var(--sunset-bg); }
+
+.notice {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+
+.notice p { margin: 0; }
+
+.notice.error {
+  background: #fdece7;
+  border-color: #f0c7bc;
+  color: var(--danger);
+}
+
+.form { gap: 14px; }
+
+.form label, .file {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.file {
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed #c9b7a4;
+  border-radius: 22px;
+  background: rgba(255, 250, 244, 0.8);
+  overflow: hidden;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--green-deep);
+}
+
+.file input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.file { position: relative; }
+
+.point iframe, .card-map iframe {
+  height: 220px;
+  border-radius: 16px;
+  background: #efe7dc;
+}
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(255, 250, 244, 0.94);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+}
+
+.dock .tab { width: 100%; }
+
+@media (min-width: 840px) {
+  .app { padding: 32px 24px 40px; }
+  .top {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .tabs { display: flex; gap: 8px; }
+  .dock { display: none; }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .filters { display: grid; grid-template-columns: 1fr 1fr 220px; align-items: end; }
+}
+
+@media (min-width: 1100px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
