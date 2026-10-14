@@ -265,7 +265,7 @@ select, input[type="password"], input[type="text"], .form input:not([type="file"
 
 .file {
   min-height: 180px;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   border: 1.5px dashed #c9b7a4;
   border-radius: 22px;

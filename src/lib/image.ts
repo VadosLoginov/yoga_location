@@ -19,15 +19,49 @@ async function fileIsHeic(file: File) {
   return HEIC_BRANDS.has(brand)
 }
 
+async function decodeToBitmap(file: File) {
+  if (await fileIsHeic(file)) {
+    try {
+      return await createImageBitmap(file)
+    } catch {
+      const { heicTo } = await import("heic-to")
+      return heicTo({ blob: file, type: "bitmap" })
+    }
+  }
+  return createImageBitmap(file)
+}
+
+function bitmapToJpeg(bitmap: ImageBitmap, quality: number) {
+  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height))
+  const width = Math.max(1, Math.round(bitmap.width * scale))
+  const height = Math.max(1, Math.round(bitmap.height * scale))
+  const canvas = document.createElement("canvas")
+  canvas.width = width
+  canvas.height = height
+  const context = canvas.getContext("2d")
+  if (!context) throw new Error("Браузер не смог подготовить фото")
+  context.drawImage(bitmap, 0, 0, width, height)
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob)
+      else reject(new Error("Не удалось сжать фото"))
+    }, "image/jpeg", quality)
+  })
+}
+
 export async function preparePhoto(file: File) {
-  if (!(await fileIsHeic(file))) return file
+  let bitmap: ImageBitmap
   try {
-    const { heicTo } = await import("heic-to")
-    const jpeg = await heicTo({ blob: file, type: "image/jpeg", quality: 0.92 })
-    const base = file.name.replace(/\.(heic|heif)$/i, "") || "photo"
-    return new File([jpeg], `${base}.jpg`, { type: "image/jpeg" })
+    bitmap = await decodeToBitmap(file)
   } catch {
-    throw new Error("Не удалось открыть HEIC. Выберите фото ещё раз.")
+    throw new Error("Не удалось открыть фото. Выберите снимок ещё раз.")
+  }
+  try {
+    const jpeg = await bitmapToJpeg(bitmap, 0.92)
+    const base = file.name.replace(/\.[^.]+$/, "") || "photo"
+    return new File([jpeg], `${base}.jpg`, { type: "image/jpeg" })
+  } finally {
+    bitmap.close()
   }
 }
 

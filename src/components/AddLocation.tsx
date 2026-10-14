@@ -136,7 +136,11 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
             accept="image/*,.heic,.heif"
             onChange={(event) => void onFile(event.target.files?.[0] ?? null)}
           />
-          {preview ? <img src={preview} alt="Выбранное фото" /> : <span>Выбрать фото с айфона</span>}
+          {preview ? (
+            <img src={preview} alt="Выбранное фото" />
+          ) : (
+            <span>{reading ? "Открываем фото…" : "Выбрать фото с айфона"}</span>
+          )}
         </label>
 
         {reading ? <p className="muted">Открываем фото…</p> : null}
