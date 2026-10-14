@@ -42,5 +42,18 @@
       "photos/2925d1f1-5aa2-45fa-9b3c-809d5b6d0d49.jpg"
     ],
     "added": "2026-10-14T07:43:29.073Z"
+  },
+  {
+    "id": "83f2f94b-c8f5-48df-9a65-aea6eb036683",
+    "name": "Парк Бенидорма",
+    "lat": 38.540976,
+    "lng": -0.12939,
+    "mode": "День",
+    "crowd": "Средне",
+    "photo": "photos/83f2f94b-c8f5-48df-9a65-aea6eb036683.jpg",
+    "photos": [
+      "photos/83f2f94b-c8f5-48df-9a65-aea6eb036683.jpg"
+    ],
+    "added": "2026-10-14T07:45:28.215Z"
   }
 ]
