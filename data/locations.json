@@ -7,16 +7,22 @@
     "mode": "День",
     "crowd": "Средне",
     "photo": "photos/6de2d6e8-97ec-4e57-8d03-a5b787124f43.jpg",
-    "added": "2026-10-14T07:03:31.180Z"
+    "added": "2026-10-14T07:03:31.180Z",
+    "photos": [
+      "photos/6de2d6e8-97ec-4e57-8d03-a5b787124f43.jpg"
+    ]
   },
   {
     "id": "b22b4c8c-1eb5-485a-a4f0-2ac95d32f080",
-    "name": "https://maps.app.goo.gl/rX8QY35mVyNPytei9",
+    "name": "Парк за виллахайосой",
     "lat": 38.50600692322142,
     "lng": -0.22998876618624312,
     "mode": "День",
     "crowd": "Средне",
     "photo": "photos/b22b4c8c-1eb5-485a-a4f0-2ac95d32f080.jpg",
-    "added": "2026-10-14T07:20:47.066Z"
+    "added": "2026-10-14T07:20:47.066Z",
+    "photos": [
+      "photos/b22b4c8c-1eb5-485a-a4f0-2ac95d32f080.jpg"
+    ]
   }
 ]
