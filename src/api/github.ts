@@ -160,6 +160,34 @@ async function putContent(options: {
   if (!response.ok) throw await readError(response)
 }
 
+async function readSha(repo: RepoRef, token: string, path: string) {
+  const response = await request(
+    `/repos/${repo.owner}/${repo.name}/contents/${path}?ref=${encodeURIComponent(repo.branch)}`,
+    token,
+  )
+  if (response.status === 404) return null
+  if (!response.ok) throw await readError(response)
+  const body = (await response.json()) as { sha?: string }
+  return body.sha ?? null
+}
+
+async function deleteContent(options: { repo: RepoRef; token: string; path: string; sha: string; message: string }) {
+  const response = await request(
+    `/repos/${options.repo.owner}/${options.repo.name}/contents/${options.path}`,
+    options.token,
+    {
+      method: "DELETE",
+      body: JSON.stringify({
+        message: options.message,
+        sha: options.sha,
+        branch: options.repo.branch,
+      }),
+    },
+  )
+  if (response.status === 404) return
+  if (!response.ok) throw await readError(response)
+}
+
 export async function inspectToken(repo: RepoRef, token: string) {
   const value = normalizeToken(token)
   if (!value) throw new GitHubError(401, "Вставьте токен.")
@@ -278,4 +306,22 @@ export async function updateLocation(options: {
     next[index] = stored
     return next
   })
+}
+
+export async function deleteLocation(options: { repo: RepoRef; token: string; location: Location }) {
+  const { repo, token, location } = options
+  await writeLocations(repo, token, `Удалена локация: ${location.name}`, (list) =>
+    list.filter((item) => item.id !== location.id),
+  )
+  for (const path of locationPhotos(location)) {
+    const sha = await readSha(repo, token, path)
+    if (!sha) continue
+    await deleteContent({
+      repo,
+      token,
+      path,
+      sha,
+      message: `Удалено фото: ${location.name}`,
+    })
+  }
 }

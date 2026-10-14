@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { updateLocation } from "../api/github"
+import { deleteLocation, updateLocation } from "../api/github"
 import { photoUrl } from "../config"
 import { parseCoordinatePair } from "../lib/coords"
 import { blobToBase64, compressPhoto, preparePhoto } from "../lib/image"
@@ -19,9 +19,10 @@ type Props = {
   onCancel: () => void
   onNeedAccess: () => void
   onSaved: (location: Location) => void
+  onDeleted: () => void
 }
 
-export function EditLocation({ location, token, repo, onCancel, onNeedAccess, onSaved }: Props) {
+export function EditLocation({ location, token, repo, onCancel, onNeedAccess, onSaved, onDeleted }: Props) {
   const [name, setName] = useState(location.name)
   const [mode, setMode] = useState<Mode>(location.mode)
   const [crowd, setCrowd] = useState<Crowd>(location.crowd)
@@ -33,6 +34,7 @@ export function EditLocation({ location, token, repo, onCancel, onNeedAccess, on
   const [cover, setCover] = useState(location.photo)
   const [reading, setReading] = useState(false)
   const [sending, setSending] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState("")
   const localPreviews = useRef<string[]>([])
 
@@ -78,6 +80,22 @@ export function EditLocation({ location, token, repo, onCancel, onNeedAccess, on
       return next
     })
     setCover((current) => (current === path ? photos.find((item) => item.path !== path)?.path ?? current : current))
+  }
+
+  async function removeLocation() {
+    setError("")
+    if (!token) {
+      onNeedAccess()
+      return
+    }
+    setSending(true)
+    try {
+      await deleteLocation({ repo, token, location })
+      onDeleted()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось удалить локацию")
+      setSending(false)
+    }
   }
 
   async function onSubmit(event: FormEvent) {
@@ -225,6 +243,21 @@ export function EditLocation({ location, token, repo, onCancel, onNeedAccess, on
         <button className="button" type="submit" disabled={sending || reading}>
           {sending ? "Сохраняем…" : "Сохранить"}
         </button>
+        {confirmDelete ? (
+          <div className="notice error">
+            <p>Удалить локацию «{location.name}» и все её фото?</p>
+            <button className="button danger" type="button" disabled={sending || reading} onClick={() => void removeLocation()}>
+              {sending ? "Удаляем…" : "Удалить локацию"}
+            </button>
+            <button className="text-button" type="button" onClick={() => setConfirmDelete(false)}>
+              Отмена
+            </button>
+          </div>
+        ) : (
+          <button className="button danger" type="button" disabled={sending || reading} onClick={() => setConfirmDelete(true)}>
+            Удалить локацию
+          </button>
+        )}
       </form>
     </section>
   )

@@ -188,6 +188,12 @@ select, input[type="password"], input[type="text"], .form input:not([type="file"
   cursor: default;
 }
 
+.button.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: #e7b2a8;
+}
+
 .text-button {
   background: transparent;
   padding: 8px 0;

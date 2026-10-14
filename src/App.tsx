@@ -77,6 +77,10 @@ export function App() {
             setLocations((current) => current.map((item) => (item.id === location.id ? location : item)))
             setEditing(null)
           }}
+          onDeleted={() => {
+            setLocations((current) => current.filter((item) => item.id !== editing?.id))
+            setEditing(null)
+          }}
         />
       ) : null}
       {screen === "list" && !editing ? (
