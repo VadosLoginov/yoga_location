@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react"
 import exifr from "exifr"
 import { publishLocation } from "../api/github"
 import { mapsEmbed, mapsLink } from "../config"
+import { parseCoordinatePair, parseCoordinates, type Gps } from "../lib/coords"
 import { blobToBase64, compressPhoto, preparePhoto } from "../lib/image"
 import { formatCoords } from "../lib/sort"
 import { CROWDS, MODES, type Crowd, type Location, type Mode, type RepoRef } from "../types"
@@ -13,15 +14,16 @@ type Props = {
   onNeedAccess: () => void
 }
 
-type Gps = { latitude: number; longitude: number }
-
 export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
   const [file, setFile] = useState<File | null>(null)
   const [fileKey, setFileKey] = useState(0)
   const [preview, setPreview] = useState("")
   const previewRef = useRef("")
-  const [gps, setGps] = useState<Gps | null>(null)
-  const [gpsMessage, setGpsMessage] = useState("")
+  const [photoGps, setPhotoGps] = useState<Gps | null>(null)
+  const [manualGps, setManualGps] = useState<Gps | null>(null)
+  const [paste, setPaste] = useState("")
+  const [latText, setLatText] = useState("")
+  const [lngText, setLngText] = useState("")
   const [reading, setReading] = useState(false)
   const [name, setName] = useState("")
   const [mode, setMode] = useState<Mode>("День")
@@ -35,6 +37,30 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
     }
   }, [])
 
+  const gps = photoGps ?? manualGps
+
+  function clearManualPoint() {
+    setManualGps(null)
+    setPaste("")
+    setLatText("")
+    setLngText("")
+  }
+
+  function updateManualFields(latitude: string, longitude: string) {
+    setLatText(latitude)
+    setLngText(longitude)
+    setManualGps(parseCoordinatePair(latitude, longitude))
+  }
+
+  function applyPaste(value: string) {
+    setPaste(value)
+    const point = parseCoordinates(value)
+    if (!point) return
+    setLatText(String(point.latitude))
+    setLngText(String(point.longitude))
+    setManualGps(point)
+  }
+
   function replacePreview(next: string) {
     if (previewRef.current) URL.revokeObjectURL(previewRef.current)
     previewRef.current = next
@@ -43,8 +69,8 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
 
   async function onFile(next: File | null) {
     setFile(null)
-    setGps(null)
-    setGpsMessage("")
+    setPhotoGps(null)
+    clearManualPoint()
     setError("")
     replacePreview("")
     if (!next) return
@@ -56,11 +82,9 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
       ])
       replacePreview(URL.createObjectURL(opened))
       setFile(opened)
-      if (!point || !Number.isFinite(point.latitude) || !Number.isFinite(point.longitude)) {
-        setGpsMessage("В этом фото нет координат. На айфоне для снимка должна быть включена геолокация.")
-        return
+      if (point && Number.isFinite(point.latitude) && Number.isFinite(point.longitude)) {
+        setPhotoGps(point)
       }
-      setGps(point)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось открыть фото")
     } finally {
@@ -98,7 +122,8 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
       }
       await publishLocation({ repo, token, location, imageBase64 })
       setFile(null)
-      setGps(null)
+      setPhotoGps(null)
+      clearManualPoint()
       setName("")
       setFileKey((current) => current + 1)
       replacePreview("")
@@ -144,7 +169,42 @@ export function AddLocation({ token, repo, onSaved, onNeedAccess }: Props) {
         </label>
 
         {reading ? <p className="muted">Открываем фото…</p> : null}
-        {gpsMessage ? <p className="notice error">{gpsMessage}</p> : null}
+        {file && !reading && !photoGps ? (
+          <div className="manual">
+            <p>В этом фото нет координат. Впишите точку или вставьте ссылку Google Карт.</p>
+            <label>
+              Ссылка или координаты
+              <input
+                value={paste}
+                placeholder="38.52497, -0.17359"
+                onChange={(event) => applyPaste(event.target.value)}
+              />
+            </label>
+            <div className="coord-row">
+              <label>
+                Широта
+                <input
+                  inputMode="decimal"
+                  value={latText}
+                  placeholder="38.52497"
+                  onChange={(event) => updateManualFields(event.target.value, lngText)}
+                />
+              </label>
+              <label>
+                Долгота
+                <input
+                  inputMode="decimal"
+                  value={lngText}
+                  placeholder="-0.17359"
+                  onChange={(event) => updateManualFields(latText, event.target.value)}
+                />
+              </label>
+            </div>
+            {(paste.trim() || (latText.trim() && lngText.trim())) && !manualGps ? (
+              <p className="notice error">Не получилось прочитать координаты. Пример: 38.52497, -0.17359</p>
+            ) : null}
+          </div>
+        ) : null}
         {gps ? (
           <div className="point">
             <p>Точка: {formatCoords(gps.latitude, gps.longitude)}</p>
