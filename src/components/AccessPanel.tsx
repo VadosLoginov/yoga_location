@@ -1,5 +1,9 @@
 import { useState, type FormEvent } from "react"
+import { inspectToken, normalizeToken } from "../api/github"
 import type { RepoRef } from "../types"
+
+const CLASSIC_TOKEN_URL =
+  "https://github.com/settings/tokens/new?scopes=public_repo&description=yoga_location"
 
 type Props = {
   token: string
@@ -12,16 +16,36 @@ export function AccessPanel({ token, repo, onSave }: Props) {
   const [owner, setOwner] = useState(repo.owner)
   const [name, setName] = useState(repo.name)
   const [branch, setBranch] = useState(repo.branch)
-  const [saved, setSaved] = useState(false)
+  const [status, setStatus] = useState("")
+  const [statusError, setStatusError] = useState(false)
+  const [checking, setChecking] = useState(false)
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault()
-    onSave(draftToken.trim(), {
+    const nextToken = normalizeToken(draftToken)
+    const nextRepo = {
       owner: owner.trim(),
       name: name.trim(),
       branch: branch.trim(),
-    })
-    setSaved(true)
+    }
+    setDraftToken(nextToken)
+    onSave(nextToken, nextRepo)
+    if (!nextToken) {
+      setStatus("Токен удалён с этого устройства.")
+      setStatusError(false)
+      return
+    }
+    setChecking(true)
+    setStatus("Проверяем право записи…")
+    setStatusError(false)
+    try {
+      setStatus(await inspectToken(nextRepo, nextToken))
+    } catch (cause) {
+      setStatusError(true)
+      setStatus(cause instanceof Error ? cause.message : "Не удалось проверить токен")
+    } finally {
+      setChecking(false)
+    }
   }
 
   return (
@@ -40,45 +64,50 @@ export function AccessPanel({ token, repo, onSave }: Props) {
             type="password"
             autoComplete="off"
             value={draftToken}
-            placeholder="github_pat_…"
+            placeholder="ghp_… или github_pat_…"
             onChange={(event) => {
               setDraftToken(event.target.value)
-              setSaved(false)
+              setStatus("")
             }}
           />
         </label>
+        <ol className="steps">
+          <li>
+            <a href={CLASSIC_TOKEN_URL} target="_blank" rel="noreferrer">
+              Создайте classic token
+            </a>
+            . Галочка <strong>public_repo</strong> уже отмечена.
+          </li>
+          <li>Нажмите Generate token и скопируйте строку ghp_… целиком.</li>
+          <li>Вставьте её сюда и сохраните. Токен останется только в этом браузере.</li>
+        </ol>
         <p className="help">
-          Создайте fine-grained token для репозитория {repo.owner}/{repo.name} с правом Contents: Read and write.
-          Токен хранится в этом браузере и в код не попадает.
-        </p>
-        <p className="help">
-          <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">
-            Создать токен
-          </a>
+          Если токен начинается с github_pat_: откройте его настройки, выберите репозиторий {name || repo.name},
+          затем Repository permissions → Contents → <strong>Read and write</strong>. После смены прав вставьте токен заново.
         </p>
         <label>
           Владелец
-          <input value={owner} onChange={(event) => { setOwner(event.target.value); setSaved(false) }} />
+          <input value={owner} onChange={(event) => { setOwner(event.target.value); setStatus("") }} />
         </label>
         <label>
           Репозиторий
-          <input value={name} onChange={(event) => { setName(event.target.value); setSaved(false) }} />
+          <input value={name} onChange={(event) => { setName(event.target.value); setStatus("") }} />
         </label>
         <label>
           Ветка
-          <input value={branch} onChange={(event) => { setBranch(event.target.value); setSaved(false) }} />
+          <input value={branch} onChange={(event) => { setBranch(event.target.value); setStatus("") }} />
         </label>
-        <button className="button" type="submit">
-          Сохранить на этом устройстве
+        <button className="button" type="submit" disabled={checking}>
+          {checking ? "Проверяем…" : "Сохранить на этом устройстве"}
         </button>
-        {saved ? <p className="muted">Сохранено в этом браузере.</p> : null}
+        {status ? <p className={statusError ? "notice error" : "muted"}>{status}</p> : null}
         {draftToken ? (
           <button
             className="text-button danger"
             type="button"
             onClick={() => {
               setDraftToken("")
-              setSaved(false)
+              setStatus("")
               onSave("", { owner: owner.trim(), name: name.trim(), branch: branch.trim() })
             }}
           >

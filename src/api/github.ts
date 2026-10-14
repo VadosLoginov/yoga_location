@@ -17,12 +17,17 @@ type ContentFile = {
   sha: string
 }
 
+export function normalizeToken(token: string) {
+  return token.trim().replace(/^bearer\s+/i, "").replace(/^token\s+/i, "").replace(/\s+/g, "")
+}
+
 function headers(token: string, json = false) {
+  const value = normalizeToken(token)
   const result: Record<string, string> = {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
   }
-  if (token) result.Authorization = `Bearer ${token}`
+  if (value) result.Authorization = `Bearer ${value}`
   if (json) result["Content-Type"] = "application/json"
   return result
 }
@@ -45,7 +50,10 @@ async function readError(response: Response) {
         "GitHub временно ограничил запросы. Вставьте токен в разделе «Доступ» или подождите немного.",
       )
     }
-    return new GitHubError(403, "У токена нет права менять файлы этого репозитория.")
+    return new GitHubError(
+      403,
+      "У токена нет права менять файлы. В разделе «Доступ» создайте classic token с галочкой public_repo и вставьте его заново.",
+    )
   }
   if (response.status === 409) {
     return new GitHubError(409, "База обновилась одновременно с другой отправкой. Попробуйте ещё раз.")
@@ -145,6 +153,34 @@ async function putContent(options: {
     },
   )
   if (!response.ok) throw await readError(response)
+}
+
+export async function inspectToken(repo: RepoRef, token: string) {
+  const value = normalizeToken(token)
+  if (!value) throw new GitHubError(401, "Вставьте токен.")
+  const userResponse = await request("/user", value)
+  if (userResponse.status === 401) {
+    throw new GitHubError(401, "Токен не подошёл. Скопируйте его целиком, без слова Bearer.")
+  }
+  if (!userResponse.ok) throw await readError(userResponse)
+  const user = (await userResponse.json()) as { login?: string }
+  const login = user.login ?? "GitHub"
+  const repoResponse = await request(`/repos/${repo.owner}/${repo.name}`, value)
+  if (repoResponse.status === 404) {
+    throw new GitHubError(
+      404,
+      `Токен аккаунта ${login} не видит ${repo.owner}/${repo.name}. В настройках токена выберите этот репозиторий.`,
+    )
+  }
+  if (!repoResponse.ok) throw await readError(repoResponse)
+  const body = (await repoResponse.json()) as { permissions?: { push?: boolean } }
+  if (!body.permissions?.push) {
+    throw new GitHubError(
+      403,
+      `Токен ${login} открывает репозиторий, но не может записывать файлы. Создайте classic token с галочкой public_repo либо в fine-grained токене поставьте Contents: Read and write для ${repo.name}.`,
+    )
+  }
+  return `Токен ${login} может записывать в ${repo.owner}/${repo.name}.`
 }
 
 export async function fetchLocations(repo: RepoRef, token: string) {

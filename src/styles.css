@@ -95,6 +95,15 @@ a { color: var(--green); }
 
 .help { font-size: 0.92rem; }
 
+.steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  line-height: 1.45;
+}
+
 .filters {
   display: flex;
   flex-direction: column;
