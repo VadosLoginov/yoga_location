@@ -95,5 +95,18 @@
       "photos/1378f3aa-1b91-4a4e-bf9e-b1dcb09de362.jpg"
     ],
     "added": "2026-10-22T08:32:06.465Z"
+  },
+  {
+    "id": "c9ccf1a8-370a-4048-b4d8-26d4a39d7f25",
+    "name": "Вилахайоса парк",
+    "lat": 38.50026666666667,
+    "lng": -0.239175,
+    "mode": "День",
+    "crowd": "Средне",
+    "photo": "photos/c9ccf1a8-370a-4048-b4d8-26d4a39d7f25.jpg",
+    "photos": [
+      "photos/c9ccf1a8-370a-4048-b4d8-26d4a39d7f25.jpg"
+    ],
+    "added": "2026-10-23T09:35:41.185Z"
   }
 ]
