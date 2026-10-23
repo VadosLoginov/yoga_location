@@ -109,5 +109,18 @@
       "photos/398a117a-04af-4392-a9eb-818dd426e014.jpg"
     ],
     "added": "2026-10-23T09:35:41.185Z"
+  },
+  {
+    "id": "2cadeb2a-14aa-4daa-8f2a-ec9fae5aef76",
+    "name": "Набережная виллахайоса",
+    "lat": 38.500194444444446,
+    "lng": -0.2374388888888889,
+    "mode": "День",
+    "crowd": "Средне",
+    "photo": "photos/2cadeb2a-14aa-4daa-8f2a-ec9fae5aef76.jpg",
+    "photos": [
+      "photos/2cadeb2a-14aa-4daa-8f2a-ec9fae5aef76.jpg"
+    ],
+    "added": "2026-10-23T09:36:43.854Z"
   }
 ]
